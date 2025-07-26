@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -6,11 +5,24 @@ import Sidebar from '@/components/Sidebar';
 import CommandesHeader from '@/components/CommandesHeader';
 import CommandesTable from '@/components/CommandesTable';
 
+// Types pour sécurité TypeScript
+type StatutCommande = 'En cours' | 'Expédiée' | 'Livrée';
+
+type Commande = {
+  id: string;
+  client: string;
+  ville: string;
+  produits: number;
+  montant: string;
+  date: string;
+  statut: StatutCommande;
+};
+
 export default function CommandesPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | StatutCommande>('all');
 
-  const mockCommandes = [
+  const mockCommandes: Commande[] = [
     {
       id: '#AG-0128',
       client: 'Jean Ndong',
@@ -18,7 +30,7 @@ export default function CommandesPage() {
       produits: 3,
       montant: '28,500 XAF',
       date: '15/07/2023',
-      statut: 'Livrée'
+      statut: 'Livrée',
     },
     {
       id: '#AG-0127',
@@ -27,7 +39,7 @@ export default function CommandesPage() {
       produits: 2,
       montant: '15,750 XAF',
       date: '14/07/2023',
-      statut: 'Expédiée'
+      statut: 'Expédiée',
     },
     {
       id: '#AG-0126',
@@ -36,7 +48,7 @@ export default function CommandesPage() {
       produits: 5,
       montant: '42,300 XAF',
       date: '13/07/2023',
-      statut: 'En cours'
+      statut: 'En cours',
     },
     {
       id: '#AG-0125',
@@ -45,7 +57,7 @@ export default function CommandesPage() {
       produits: 1,
       montant: '8,500 XAF',
       date: '12/07/2023',
-      statut: 'Livrée'
+      statut: 'Livrée',
     },
     {
       id: '#AG-0124',
@@ -54,7 +66,7 @@ export default function CommandesPage() {
       produits: 4,
       montant: '33,200 XAF',
       date: '11/07/2023',
-      statut: 'Expédiée'
+      statut: 'Expédiée',
     },
     {
       id: '#AG-0123',
@@ -63,7 +75,7 @@ export default function CommandesPage() {
       produits: 2,
       montant: '19,800 XAF',
       date: '10/07/2023',
-      statut: 'En cours'
+      statut: 'En cours',
     },
     {
       id: '#AG-0122',
@@ -72,7 +84,7 @@ export default function CommandesPage() {
       produits: 6,
       montant: '54,600 XAF',
       date: '09/07/2023',
-      statut: 'Livrée'
+      statut: 'Livrée',
     },
     {
       id: '#AG-0121',
@@ -81,14 +93,15 @@ export default function CommandesPage() {
       produits: 3,
       montant: '26,400 XAF',
       date: '08/07/2023',
-      statut: 'En cours'
-    }
+      statut: 'En cours',
+    },
   ];
 
   const filteredCommandes = useMemo(() => {
-    return mockCommandes.filter(commande => {
-      const matchesSearch = commande.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           commande.client.toLowerCase().includes(searchTerm.toLowerCase());
+    return mockCommandes.filter((commande) => {
+      const matchesSearch =
+        commande.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        commande.client.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || commande.statut === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -97,15 +110,15 @@ export default function CommandesPage() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      
+
       <div className="flex-1 flex flex-col">
-        <CommandesHeader 
+        <CommandesHeader
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
         />
-        
+
         <div className="flex-1 p-6">
           <CommandesTable commandes={filteredCommandes} />
         </div>

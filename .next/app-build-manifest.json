@@ -1,0 +1,98 @@
+{
+  "pages": {
+    "/not-found": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/chunks/app/not-found-af321ac63368ceed.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/chunks/app/_not-found/page-5ba53b3d4445f570.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/css/d18a1b3a3b6da596.css",
+      "static/chunks/app/layout-479569f416cb1a1d.js"
+    ],
+    "/ajouter-produit/page": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/chunks/244-7bdd6e660139e823.js",
+      "static/chunks/app/ajouter-produit/page-1d7f55061c0fe33f.js"
+    ],
+    "/commandes/page": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/chunks/244-7bdd6e660139e823.js",
+      "static/chunks/app/commandes/page-dcca952bccc760a9.js"
+    ],
+    "/clients/page": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/chunks/244-7bdd6e660139e823.js",
+      "static/chunks/app/clients/page-b591c8d6404933c3.js"
+    ],
+    "/gerer-stock/page": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/chunks/244-7bdd6e660139e823.js",
+      "static/chunks/app/gerer-stock/page-ccc3b869c05e38f4.js"
+    ],
+    "/notifications/page": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/chunks/244-7bdd6e660139e823.js",
+      "static/chunks/app/notifications/page-aeec21d7d39ce68e.js"
+    ],
+    "/nouveau-client/page": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/chunks/244-7bdd6e660139e823.js",
+      "static/chunks/app/nouveau-client/page-abddf3a15094ccf7.js"
+    ],
+    "/page": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/chunks/244-7bdd6e660139e823.js",
+      "static/chunks/app/page-ff09d20cec05de63.js"
+    ],
+    "/produits/page": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/chunks/244-7bdd6e660139e823.js",
+      "static/chunks/app/produits/page-354ff41602596537.js"
+    ],
+    "/promotions/page": [
+      "static/chunks/webpack-f829b1e19f8927ce.js",
+      "static/chunks/4bd1b696-6656c00020a6602a.js",
+      "static/chunks/684-9b656d5846aa794a.js",
+      "static/chunks/main-app-04d4c8130dc4d33a.js",
+      "static/chunks/244-7bdd6e660139e823.js",
+      "static/chunks/app/promotions/page-674ebb800ba04883.js"
+    ]
+  }
+}
