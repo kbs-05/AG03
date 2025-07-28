@@ -1,7 +1,11 @@
 'use client';
 
+import { db } from '@/lib/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { useState } from 'react';
+
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   category: string;
@@ -14,9 +18,11 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
+  onEdit: (product: Product) => void;  // callback édition
+  onDelete: (id: string) => void;      // callback suppression
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
   const stockPercentage = (product.stock / product.maxStock) * 100;
   const categoryNames: { [key: string]: string } = {
     fruits: 'Fruits',
@@ -86,10 +92,18 @@ export default function ProductCard({ product }: ProductCardProps) {
           
           <div className="flex justify-between items-center pt-2">
             <div className="flex space-x-2">
-              <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer">
+              <button 
+                onClick={() => onEdit(product)} 
+                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                aria-label="Editer le produit"
+              >
                 <i className="ri-edit-line w-4 h-4 flex items-center justify-center"></i>
               </button>
-              <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer">
+              <button 
+                onClick={() => onDelete(product.id)} 
+                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                aria-label="Supprimer le produit"
+              >
                 <i className="ri-delete-bin-line w-4 h-4 flex items-center justify-center"></i>
               </button>
             </div>

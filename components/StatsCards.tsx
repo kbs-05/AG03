@@ -1,5 +1,7 @@
-
 'use client';
+
+import { useEffect, useState } from "react";
+import { fetchStats } from '@/lib/fetchStats'; // adapte le chemin selon ta structure
 
 interface StatCardProps {
   title: string;
@@ -33,40 +35,87 @@ function StatCard({ title, value, change, changeType, icon, iconBg }: StatCardPr
 }
 
 export default function StatsCards() {
-  const stats = [
+  const [stats, setStats] = useState<StatCardProps[]>([
     {
       title: 'Commandes',
-      value: '128',
-      change: '12% ce mois',
-      changeType: 'positive' as const,
+      value: '...',
+      change: '...',
+      changeType: 'positive',
       icon: 'ri-shopping-cart-line',
       iconBg: 'bg-green-500'
     },
     {
       title: 'Revenus',
-      value: '1.2M XAF',
-      change: '8% ce mois',
-      changeType: 'positive' as const,
+      value: '...',
+      change: '...',
+      changeType: 'positive',
       icon: 'ri-money-dollar-circle-line',
       iconBg: 'bg-blue-500'
     },
     {
       title: 'Produits',
-      value: '86',
-      change: '3% ce mois',
-      changeType: 'negative' as const,
+      value: '...',
+      change: '...',
+      changeType: 'negative',
       icon: 'ri-product-hunt-line',
       iconBg: 'bg-orange-500'
     },
     {
       title: 'Clients',
-      value: '254',
-      change: '5% ce mois',
-      changeType: 'positive' as const,
+      value: '...',
+      change: '...',
+      changeType: 'positive',
       icon: 'ri-team-line',
       iconBg: 'bg-purple-500'
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const data = await fetchStats();
+
+        setStats([
+          {
+            title: 'Commandes',
+            value: data.commandes.toString(),
+            change: '12% ce mois',
+            changeType: 'positive',
+            icon: 'ri-shopping-cart-line',
+            iconBg: 'bg-green-500'
+          },
+          {
+            title: 'Revenus',
+            value: `${(data.revenus / 1000).toFixed(1)}k XAF`,
+            change: '8% ce mois',
+            changeType: 'positive',
+            icon: 'ri-money-dollar-circle-line',
+            iconBg: 'bg-blue-500'
+          },
+          {
+            title: 'Produits',
+            value: data.produits.toString(),
+            change: '3% ce mois',
+            changeType: 'negative',
+            icon: 'ri-product-hunt-line',
+            iconBg: 'bg-orange-500'
+          },
+          {
+            title: 'Clients',
+            value: data.clients.toString(),
+            change: '5% ce mois',
+            changeType: 'positive',
+            icon: 'ri-team-line',
+            iconBg: 'bg-purple-500'
+          }
+        ]);
+      } catch (error) {
+        console.error("Erreur lors du chargement des stats:", error);
+      }
+    }
+
+    loadStats();
+  }, []);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

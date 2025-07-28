@@ -1,6 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, collection, onSnapshot, query, orderBy, QuerySnapshot, DocumentData } from 'firebase/firestore';
+
+// Config Firebase — remplace par ta config perso
+const firebaseConfig = {
+  apiKey: 'TA_CLE_API',
+  authDomain: 'ton-projet.firebaseapp.com',
+  projectId: 'ton-projet',
+  storageBucket: 'ton-projet.appspot.com',
+  messagingSenderId: 'ton-id',
+  appId: 'ton-app-id',
+};
+
+if (!getApps().length) {
+  initializeApp(firebaseConfig);
+}
+
+const db = getFirestore();
 
 interface Notification {
   id: string;
@@ -18,67 +36,50 @@ interface NotificationPanelProps {
 }
 
 export default function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      type: 'order',
-      title: 'Nouvelle commande',
-      message: 'Commande #AG-0129 reçue de Jean Ndong',
-      time: '5 min',
-      read: false,
-      priority: 'high'
-    },
-    {
-      id: '2',
-      type: 'order',
-      title: 'Commande expédiée',
-      message: 'Commande #AG-0127 expédiée vers Port-Gentil',
-      time: '1h',
-      read: false,
-      priority: 'medium'
-    },
-    {
-      id: '3',
-      type: 'client',
-      title: 'Nouveau client',
-      message: 'Restaurant Le Palmier s\'est inscrit',
-      time: '2h',
-      read: false,
-      priority: 'low'
-    },
-    {
-      id: '4',
-      type: 'product',
-      title: 'Stock faible',
-      message: 'Produit "Huile de palme" en rupture de stock',
-      time: '3h',
-      read: true,
-      priority: 'high'
-    },
-    {
-      id: '5',
-      type: 'system',
-      title: 'Maintenance programmée',
-      message: 'Maintenance système prévue dimanche 3h-5h',
-      time: '1j',
-      read: true,
-      priority: 'medium'
-    }
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Requête sur la collection notifications, triée par time décroissant
+    const q = query(collection(db, 'notifications'), orderBy('time', 'desc'));
+
+    // Écoute en temps réel
+    const unsubscribe = onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
+      const notifData: Notification[] = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          type: data.type ?? 'system',
+          title: data.title ?? '',
+          message: data.message ?? '',
+          time: data.time ?? '',
+          read: data.read ?? false,
+          priority: data.priority ?? 'low',
+        } as Notification;
+      });
+      setNotifications(notifData);
+    }, (error) => {
+      console.error("Erreur en récupérant les notifications : ", error);
+    });
+
+    return () => unsubscribe();
+  }, [isOpen]);
+
+  // Fonction pour marquer comme lu (localement, tu peux aussi mettre à jour Firestore)
   const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
+    setNotifications(prev =>
+      prev.map(notif => (notif.id === id ? { ...notif, read: true } : notif))
     );
+    // TODO: mettre à jour Firestore si besoin
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    );
+    setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+    // TODO: mettre à jour Firestore si besoin
   };
+
+  // Icones et couleurs comme dans ton code d’origine (tu peux garder ces fonctions)
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -106,8 +107,8 @@ export default function NotificationPanel({ isOpen, onClose }: NotificationPanel
   return (
     <div className="fixed inset-0 z-50" onClick={onClose}>
       <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-      
-      <div 
+
+      <div
         className="absolute top-16 right-4 w-96 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -128,7 +129,7 @@ export default function NotificationPanel({ isOpen, onClose }: NotificationPanel
               </button>
             </div>
           </div>
-          
+
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
@@ -169,7 +170,7 @@ export default function NotificationPanel({ isOpen, onClose }: NotificationPanel
                         'text-gray-600'
                       }`}></i>
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p className={`text-sm font-medium ${

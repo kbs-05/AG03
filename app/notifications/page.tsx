@@ -1,8 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import DashboardHeader from '@/components/DashboardHeader';
+
+import { db } from '@/lib/firebase';
+import {
+  collection,
+  onSnapshot,
+  doc,
+  updateDoc,
+  query,
+  orderBy
+} from 'firebase/firestore';
 
 interface Notification {
   id: string;
@@ -17,121 +27,42 @@ interface Notification {
 
 export default function NotificationsPage() {
   const [filter, setFilter] = useState('all');
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      type: 'order',
-      title: 'Nouvelle commande reçue',
-      message: 'Commande #AG-0129 de Jean Ndong pour un montant de 45 750 XAF',
-      date: '2024-01-15',
-      time: '14:30',
-      read: false,
-      priority: 'high'
-    },
-    {
-      id: '2',
-      type: 'order',
-      title: 'Commande expédiée',
-      message: 'Commande #AG-0127 expédiée vers Port-Gentil - Suivi: PTG12345',
-      date: '2024-01-15',
-      time: '13:15',
-      read: false,
-      priority: 'medium'
-    },
-    {
-      id: '3',
-      type: 'client',
-      title: 'Nouveau client inscrit',
-      message: 'Restaurant Le Palmier s\'est inscrit sur votre plateforme',
-      date: '2024-01-15',
-      time: '12:45',
-      read: false,
-      priority: 'low'
-    },
-    {
-      id: '4',
-      type: 'product',
-      title: 'Alerte stock faible',
-      message: 'Huile de palme: stock restant 8 unités (minimum: 15)',
-      date: '2024-01-15',
-      time: '11:20',
-      read: true,
-      priority: 'high'
-    },
-    {
-      id: '5',
-      type: 'order',
-      title: 'Commande livrée',
-      message: 'Commande #AG-0125 livrée à Marie Mba (Libreville)',
-      date: '2024-01-15',
-      time: '10:30',
-      read: true,
-      priority: 'medium'
-    },
-    {
-      id: '6',
-      type: 'system',
-      title: 'Sauvegarde automatique',
-      message: 'Sauvegarde quotidienne des données effectuée avec succès',
-      date: '2024-01-15',
-      time: '09:00',
-      read: true,
-      priority: 'low'
-    },
-    {
-      id: '7',
-      type: 'product',
-      title: 'Nouveau produit ajouté',
-      message: 'Produit \"Mangues fraîches\" ajouté à votre catalogue',
-      date: '2024-01-14',
-      time: '16:45',
-      read: true,
-      priority: 'low'
-    },
-    {
-      id: '8',
-      type: 'order',
-      title: 'Commande annulée',
-      message: 'Commande #AG-0124 annulée par le client Paul Obame',
-      date: '2024-01-14',
-      time: '15:20',
-      read: true,
-      priority: 'medium'
-    },
-    {
-      id: '9',
-      type: 'system',
-      title: 'Maintenance programmée',
-      message: 'Maintenance système prévue dimanche 21 janvier de 3h à 5h',
-      date: '2024-01-14',
-      time: '14:00',
-      read: true,
-      priority: 'medium'
-    },
-    {
-      id: '10',
-      type: 'client',
-      title: 'Feedback client',
-      message: 'Avis 5 étoiles reçu de SuperMarché Gabon',
-      date: '2024-01-14',
-      time: '12:30',
-      read: true,
-      priority: 'low'
-    }
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
+  useEffect(() => {
+    const colRef = collection(db, 'notifications');
+    const q = query(colRef, orderBy('date', 'desc'), orderBy('time', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Notification, 'id'>)
+      }));
+      setNotifications(data);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const markAsRead = async (id: string) => {
+    try {
+      const notifRef = doc(db, 'notifications', id);
+      await updateDoc(notifRef, { read: true });
+      // Le onSnapshot mettra à jour automatiquement la liste
+    } catch (error) {
+      console.error("Erreur lors du marquage comme lu :", error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    );
+  const markAllAsRead = async () => {
+    try {
+      const unread = notifications.filter(n => !n.read);
+      await Promise.all(unread.map(n => updateDoc(doc(db, 'notifications', n.id), { read: true })));
+    } catch (error) {
+      console.error("Erreur lors du marquage de toutes les notifications :", error);
+    }
   };
 
   const filteredNotifications = notifications.filter(notif => {
@@ -171,20 +102,28 @@ export default function NotificationsPage() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  if (loading) return (
+    <div className="flex h-screen items-center justify-center">
+      <p className="text-gray-600 text-lg">Chargement des notifications...</p>
+    </div>
+  );
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader />
-        
+
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
                 <p className="text-gray-600 mt-2">
-                  {unreadCount > 0 ? `${unreadCount} notifications non lues` : 'Toutes les notifications sont lues'}
+                  {unreadCount > 0
+                    ? `${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}`
+                    : 'Toutes les notifications sont lues'}
                 </p>
               </div>
               {unreadCount > 0 && (
@@ -203,8 +142,8 @@ export default function NotificationsPage() {
                 <button
                   onClick={() => setFilter('all')}
                   className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                    filter === 'all' 
-                      ? 'bg-green-600 text-white' 
+                    filter === 'all'
+                      ? 'bg-green-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -213,8 +152,8 @@ export default function NotificationsPage() {
                 <button
                   onClick={() => setFilter('unread')}
                   className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                    filter === 'unread' 
-                      ? 'bg-green-600 text-white' 
+                    filter === 'unread'
+                      ? 'bg-green-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -223,8 +162,8 @@ export default function NotificationsPage() {
                 <button
                   onClick={() => setFilter('order')}
                   className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                    filter === 'order' 
-                      ? 'bg-green-600 text-white' 
+                    filter === 'order'
+                      ? 'bg-green-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -233,8 +172,8 @@ export default function NotificationsPage() {
                 <button
                   onClick={() => setFilter('client')}
                   className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                    filter === 'client' 
-                      ? 'bg-green-600 text-white' 
+                    filter === 'client'
+                      ? 'bg-green-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -243,8 +182,8 @@ export default function NotificationsPage() {
                 <button
                   onClick={() => setFilter('product')}
                   className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                    filter === 'product' 
-                      ? 'bg-green-600 text-white' 
+                    filter === 'product'
+                      ? 'bg-green-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -253,8 +192,8 @@ export default function NotificationsPage() {
                 <button
                   onClick={() => setFilter('system')}
                   className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                    filter === 'system' 
-                      ? 'bg-green-600 text-white' 
+                    filter === 'system'
+                      ? 'bg-green-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -284,7 +223,7 @@ export default function NotificationsPage() {
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getNotificationColor(notification.type)}`}>
                           <i className={`${getNotificationIcon(notification.type)} w-5 h-5 flex items-center justify-center`}></i>
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <p className={`text-sm font-medium ${

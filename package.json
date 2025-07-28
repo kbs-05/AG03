@@ -10,6 +10,7 @@
   "dependencies": {
     "@react-google-maps/api": "^2.19.3",
     "eslint": "^8.57.0",
+    "firebase": "^12.0.0",
     "next": "15.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

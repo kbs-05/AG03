@@ -1,5 +1,26 @@
-
 'use client';
+
+import { useEffect, useState } from 'react';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, collection, getDocs, QuerySnapshot, DocumentData } from 'firebase/firestore';
+
+// Config Firebase : remplace par ta config réelle
+const firebaseConfig = {
+  apiKey: "AIzaSyAYRMKz-rdcDJ9_wSC4GPJ5Nr9JGHNf98s",
+  authDomain: "ag02-9e907.firebaseapp.com",
+  projectId: "ag02-9e907",
+  storageBucket: "ag02-9e907.firebasestorage.app",
+  messagingSenderId: "646527347928",
+  appId: "1:646527347928:web:dca6972379e7f72027bbad",
+  measurementId: "G-8MX1LYCXS6"
+};
+
+// Initialisation Firebase (uniquement une fois)
+if (!getApps().length) {
+  initializeApp(firebaseConfig);
+}
+
+const db = getFirestore();
 
 interface Order {
   id: string;
@@ -27,14 +48,40 @@ function StatusBadge({ status }: StatusBadgeProps) {
 }
 
 export default function RecentOrders() {
-  const orders: Order[] = [
-    { id: '#AG-0125', client: 'Jean Ndong', montant: '25,000 XAF', statut: 'Livré' },
-    { id: '#AG-0124', client: 'Marie Mba', montant: '18,500 XAF', statut: 'En cours' },
-    { id: '#AG-0123', client: 'Paul Ondo', montant: '32,000 XAF', statut: 'Expédié' },
-    { id: '#AG-0122', client: 'Sophie Obiang', montant: '15,750 XAF', statut: 'Livré' },
-    { id: '#AG-0121', client: 'Pierre Mengue', montant: '28,200 XAF', statut: 'En cours' },
-    { id: '#AG-0120', client: 'Fatou Diallo', montant: '19,800 XAF', statut: 'Expédié' }
-  ];
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchOrders() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(collection(db, 'commandes'));
+        const ordersData: Order[] = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            client: data.client ?? 'Inconnu',
+            montant: data.montant ?? '0',
+            statut: data.statut ?? 'En cours',
+          } as Order;
+        });
+        setOrders(ordersData);
+      } catch (err) {
+        setError('Erreur lors du chargement des commandes.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchOrders();
+  }, []);
+
+  if (loading) return <div>Chargement des commandes...</div>;
+  if (error) return <div className="text-red-600">{error}</div>;
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">

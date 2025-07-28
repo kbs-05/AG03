@@ -1,8 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import DashboardHeader from '@/components/DashboardHeader';
+
+import { 
+  collection, 
+  doc, 
+  getFirestore, 
+  onSnapshot, 
+  query, 
+  updateDoc 
+} from 'firebase/firestore';
+import { app } from '@/lib/firebase'; // adapte le chemin vers ton fichier d'initialisation Firebase
 
 interface StockItem {
   id: string;
@@ -23,63 +33,7 @@ export default function GererStockPage() {
   const [editingStock, setEditingStock] = useState<string | null>(null);
   const [newStock, setNewStock] = useState('');
 
-  const [stockItems, setStockItems] = useState<StockItem[]>([
-    {
-      id: '1',
-      name: 'Bananes plantains',
-      category: 'fruits',
-      currentStock: 90,
-      minStock: 20,
-      maxStock: 150,
-      unit: 'kg',
-      lastUpdate: '2024-01-15',
-      status: 'en-stock'
-    },
-    {
-      id: '2',
-      name: 'Igname blanche',
-      category: 'tubercules',
-      currentStock: 15,
-      minStock: 25,
-      maxStock: 100,
-      unit: 'kg',
-      lastUpdate: '2024-01-14',
-      status: 'stock-faible'
-    },
-    {
-      id: '3',
-      name: 'Tomates fraîches',
-      category: 'legumes',
-      currentStock: 0,
-      minStock: 15,
-      maxStock: 80,
-      unit: 'kg',
-      lastUpdate: '2024-01-13',
-      status: 'rupture'
-    },
-    {
-      id: '4',
-      name: 'Riz blanc',
-      category: 'cereales',
-      currentStock: 120,
-      minStock: 30,
-      maxStock: 200,
-      unit: 'sac',
-      lastUpdate: '2024-01-15',
-      status: 'en-stock'
-    },
-    {
-      id: '5',
-      name: 'Poisson fumé',
-      category: 'poissons',
-      currentStock: 8,
-      minStock: 15,
-      maxStock: 50,
-      unit: 'kg',
-      lastUpdate: '2024-01-12',
-      status: 'stock-faible'
-    }
-  ]);
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
 
   const categories = [
     { id: 'all', name: 'Toutes catégories' },
@@ -98,6 +52,34 @@ export default function GererStockPage() {
     { id: 'rupture', name: 'Rupture' }
   ];
 
+  // Firestore reference
+  const db = getFirestore(app);
+
+  useEffect(() => {
+    const q = query(collection(db, 'stockItems'));
+    // onSnapshot écoute les changements en temps réel
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const items: StockItem[] = [];
+      querySnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        items.push({
+          id: docSnap.id,
+          name: data.name,
+          category: data.category,
+          currentStock: data.currentStock,
+          minStock: data.minStock,
+          maxStock: data.maxStock,
+          unit: data.unit,
+          lastUpdate: data.lastUpdate,
+          status: data.status
+        });
+      });
+      setStockItems(items);
+    });
+
+    return () => unsubscribe();
+  }, [db]);
+
   const filteredItems = stockItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
@@ -105,22 +87,29 @@ export default function GererStockPage() {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const handleStockUpdate = (id: string, newStockValue: number) => {
-    setStockItems(prev => prev.map(item => {
-      if (item.id === id) {
-        let status: 'en-stock' | 'stock-faible' | 'rupture' = 'en-stock';
-        if (newStockValue === 0) status = 'rupture';
-        else if (newStockValue <= item.minStock) status = 'stock-faible';
-        
-        return {
-          ...item,
-          currentStock: newStockValue,
-          status,
-          lastUpdate: new Date().toISOString().split('T')[0]
-        };
-      }
-      return item;
-    }));
+  // Mets à jour Firestore + état local
+  const handleStockUpdate = async (id: string, newStockValue: number) => {
+    const item = stockItems.find(i => i.id === id);
+    if (!item) return;
+
+    let status: 'en-stock' | 'stock-faible' | 'rupture' = 'en-stock';
+    if (newStockValue === 0) status = 'rupture';
+    else if (newStockValue <= item.minStock) status = 'stock-faible';
+
+    const lastUpdate = new Date().toISOString().split('T')[0];
+
+    try {
+      const itemRef = doc(db, 'stockItems', id);
+      await updateDoc(itemRef, {
+        currentStock: newStockValue,
+        status,
+        lastUpdate
+      });
+      // L'état local sera mis à jour par onSnapshot en temps réel, donc pas besoin de setStockItems ici
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du stock:', error);
+    }
+
     setEditingStock(null);
     setNewStock('');
   };
@@ -247,7 +236,14 @@ export default function GererStockPage() {
                                 min="0"
                               />
                               <button
-                                onClick={() => handleStockUpdate(item.id, parseInt(newStock))}
+                                onClick={() => {
+                                  const parsedStock = parseInt(newStock, 10);
+                                  if (isNaN(parsedStock) || parsedStock < 0) {
+                                    alert('Veuillez entrer un nombre valide');
+                                    return;
+                                  }
+                                  handleStockUpdate(item.id, parsedStock);
+                                }}
                                 className="text-green-600 hover:text-green-700"
                               >
                                 <i className="ri-check-line w-4 h-4 flex items-center justify-center"></i>
