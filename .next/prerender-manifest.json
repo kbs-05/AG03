@@ -1,7 +1,7 @@
 {
   "version": 4,
   "routes": {
-    "/clients": {
+    "/gerer-stock": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -14,8 +14,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/clients",
-      "dataRoute": "/clients.rsc",
+      "srcRoute": "/gerer-stock",
+      "dataRoute": "/gerer-stock.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -49,7 +49,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/produits": {
+    "/clients": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -62,8 +62,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/produits",
-      "dataRoute": "/produits.rsc",
+      "srcRoute": "/clients",
+      "dataRoute": "/clients.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -97,7 +97,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/commandes": {
+    "/produits": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -110,8 +110,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/commandes",
-      "dataRoute": "/commandes.rsc",
+      "srcRoute": "/produits",
+      "dataRoute": "/produits.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -145,7 +145,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/gerer-stock": {
+    "/commandes": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -158,32 +158,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/gerer-stock",
-      "dataRoute": "/gerer-stock.rsc",
-      "allowHeader": [
-        "host",
-        "x-matched-path",
-        "x-prerender-revalidate",
-        "x-prerender-revalidate-if-generated",
-        "x-next-revalidated-tags",
-        "x-next-revalidate-tag-token"
-      ]
-    },
-    "/notifications": {
-      "experimentalBypassFor": [
-        {
-          "type": "header",
-          "key": "Next-Action"
-        },
-        {
-          "type": "header",
-          "key": "content-type",
-          "value": "multipart/form-data;.*"
-        }
-      ],
-      "initialRevalidateSeconds": false,
-      "srcRoute": "/notifications",
-      "dataRoute": "/notifications.rsc",
+      "srcRoute": "/commandes",
+      "dataRoute": "/commandes.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -216,13 +192,37 @@
         "x-next-revalidated-tags",
         "x-next-revalidate-tag-token"
       ]
+    },
+    "/notifications": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "Next-Action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/notifications",
+      "dataRoute": "/notifications.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
     }
   },
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "22dc8205d37915c8d5f4f40216b1cbb2",
-    "previewModeSigningKey": "930647267f7a690b27de9d3c0535114667f50eaff19c0b971fb2a2dd2ff1246f",
-    "previewModeEncryptionKey": "980f90cdea432c28a43e714a9877d339f98acb7de0cb8b13dc7366b268f6a6e7"
+    "previewModeId": "d6f8e54ef7d3e1520f633a0e1d6ebbe5",
+    "previewModeSigningKey": "e2d772a088c8658bad22e1fe8656e35134cabbadaa61ed38caaf0b44894cdd88",
+    "previewModeEncryptionKey": "2736bdf6c622ec98f58a37a150474d01d7d40a0c290449162f3189500b35b093"
   }
 }

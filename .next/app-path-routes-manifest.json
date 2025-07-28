@@ -1,12 +1,12 @@
 {
-  "/commandes/page": "/commandes",
   "/ajouter-produit/page": "/ajouter-produit",
   "/_not-found/page": "/_not-found",
-  "/gerer-stock/page": "/gerer-stock",
   "/clients/page": "/clients",
-  "/nouveau-client/page": "/nouveau-client",
-  "/notifications/page": "/notifications",
   "/produits/page": "/produits",
+  "/gerer-stock/page": "/gerer-stock",
+  "/commandes/page": "/commandes",
+  "/page": "/",
   "/promotions/page": "/promotions",
-  "/page": "/"
+  "/notifications/page": "/notifications",
+  "/nouveau-client/page": "/nouveau-client"
 }

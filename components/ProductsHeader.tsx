@@ -8,12 +8,14 @@ import { getFirestore, collection, query, where, onSnapshot } from 'firebase/fir
 
 // Configuration Firebase à adapter
 const firebaseConfig = {
-  apiKey: 'TA_CLE_API',
-  authDomain: 'ton-projet.firebaseapp.com',
-  projectId: 'ton-projet',
-  storageBucket: 'ton-projet.appspot.com',
-  messagingSenderId: 'ton-id',
-  appId: 'ton-app-id',
+ apiKey: "AIzaSyAYRMKz-rdcDJ9_wSC4GPJ5Nr9JGHNf98s",
+  authDomain: "ag02-9e907.firebaseapp.com",
+  projectId: "ag02-9e907",
+  storageBucket: "ag02-9e907.firebasestorage.app",
+
+  messagingSenderId: "646527347928",
+  appId: "1:646527347928:web:dca6972379e7f72027bbad",
+  measurementId: "G-8MX1LYCXS6"
 };
 
 // Initialisation Firebase (éviter doublons)
