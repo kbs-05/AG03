@@ -1,12 +1,12 @@
 {
-  "/ajouter-produit/page": "/ajouter-produit",
   "/_not-found/page": "/_not-found",
   "/clients/page": "/clients",
-  "/produits/page": "/produits",
-  "/gerer-stock/page": "/gerer-stock",
+  "/nouveau-client/page": "/nouveau-client",
+  "/ajouter-produit/page": "/ajouter-produit",
   "/commandes/page": "/commandes",
-  "/page": "/",
-  "/promotions/page": "/promotions",
   "/notifications/page": "/notifications",
-  "/nouveau-client/page": "/nouveau-client"
+  "/gerer-stock/page": "/gerer-stock",
+  "/page": "/",
+  "/produits/page": "/produits",
+  "/promotions/page": "/promotions"
 }

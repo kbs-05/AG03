@@ -33,7 +33,14 @@
     "dangerouslyAllowSVG": false,
     "contentSecurityPolicy": "script-src 'none'; frame-src 'none'; sandbox;",
     "contentDispositionType": "attachment",
-    "remotePatterns": [],
+    "remotePatterns": [
+      {
+        "protocol": "https",
+        "hostname": "^(?:^(?:firebasestorage\\.googleapis\\.com)$)$",
+        "port": "",
+        "pathname": "^(?:\\/v0\\/b(?:\\/(?!\\.{1,2}(?:\\/|$))(?:(?:(?!(?:^|\\/)\\.{1,2}(?:\\/|$)).)*?)|$))$"
+      }
+    ],
     "unoptimized": true,
     "sizes": [
       640,
