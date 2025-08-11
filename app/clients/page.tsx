@@ -36,7 +36,6 @@ export default function ClientsPage() {
               <p>Chargement des clients...</p>
             ) : (
               <>
-                <ClientsTable clients={clients} />
                 <div className="mt-8">
                   <ClientsTable clients={clients} />
                 </div>

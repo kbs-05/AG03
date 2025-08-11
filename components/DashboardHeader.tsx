@@ -52,18 +52,6 @@ export default function DashboardHeader() {
           </div>
 
           <div className="flex items-center space-x-4">
-            <button
-              className="relative p-2 text-gray-600 hover:text-gray-900 cursor-pointer"
-              onClick={() => setIsNotificationOpen(true)} // Ouvre le panneau de notifications
-            >
-              <i className="ri-notification-line w-5 h-5 flex items-center justify-center"></i>
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
             <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100">
               <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                 <i className="ri-user-line text-green-600"></i>
@@ -73,11 +61,6 @@ export default function DashboardHeader() {
           </div>
         </div>
       </header>
-
-      <NotificationPanel
-        isOpen={isNotificationOpen}
-        onClose={() => setIsNotificationOpen(false)}
-      />
     </>
   );
 }

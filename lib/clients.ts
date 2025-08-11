@@ -4,10 +4,11 @@ import { db } from './firebase';
 
 export type Client = {
   id?: string;
-  nom: string;
+  displayName: string;
   email: string;
-  telephone: string;
-  ville: string;
+  phoneNumber: string;
+  adresse: string;
+  date: string;
 };
 
 export async function getClients(): Promise<Client[]> {

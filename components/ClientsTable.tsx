@@ -21,19 +21,25 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Téléphone
             </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Date de création
+            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {clients.map((client, index) => (
             <tr key={client.id ?? index}>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {client.nom}
+                {client.displayName}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {client.email}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {client.telephone}
+                {client.phoneNumber}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {client.date}
               </td>
             </tr>
           ))}
@@ -47,4 +53,4 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
       )}
     </div>
   );
-}
+} 
