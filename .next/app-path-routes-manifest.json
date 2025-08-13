@@ -1,0 +1,11 @@
+{
+  "/ajouter-produit/page": "/ajouter-produit",
+  "/_not-found/page": "/_not-found",
+  "/clients/page": "/clients",
+  "/commandes/page": "/commandes",
+  "/gerer-stock/page": "/gerer-stock",
+  "/nouveau-client/page": "/nouveau-client",
+  "/produits/page": "/produits",
+  "/promotions/page": "/promotions",
+  "/page": "/"
+}
