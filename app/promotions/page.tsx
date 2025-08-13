@@ -31,14 +31,24 @@ interface Promotion {
   createdAt?: any;
 }
 
+// === NOUVELLE STRUCTURE POUR ACTUALITÉS / PUBLICITÉS ===
 interface NewsItem {
   id: string;
-  title: string;
-  content: string;
-  imageUrl?: string | null;
-  link?: string | null;
-  type: 'news' | 'advertisement';
-  isPublished: boolean;
+
+  // champs style "carte" (comme sur l'image)
+  badge: string;         // ex: "-20%" ou "Nouveau"
+  badgeBg: string;       // ex: "bg-red-50"
+  badgeText: string;     // ex: "text-red-500"
+  subtext: string;       // ex: "Offre limitée"
+  title: string;         // ex: "Offre de la semaine !"
+  description: string;   // ex: "Profitez de -20% ..."
+  buttonText: string;    // ex: "En profiter"
+  icon: string;          // ex: "arrow-forward-outline"
+
+  // meta
+  link?: string | null;                   // lien optionnel quand on clique sur le bouton
+  type: 'news' | 'advertisement';        // pour filtrer côté app
+  isPublished: boolean;                  // visible côté client ?
   createdAt?: any;
 }
 
@@ -66,10 +76,10 @@ const formatDateDisplay = (dateStr?: string | null) => {
   if (!dateStr) return '-';
   try {
     const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr; // already a simple string like '2025-08-10'
+    if (isNaN(d.getTime())) return (dateStr as any)?.toLocaleDateString ? (dateStr as any).toLocaleDateString() : String(dateStr);
     return d.toLocaleDateString();
   } catch {
-    return dateStr;
+    return String(dateStr);
   }
 };
 
@@ -145,7 +155,6 @@ export default function PromotionsPage() {
   const handlePromotionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // validation minimale
     if (!formData.name || !formData.startDate || !formData.endDate) {
       alert('Veuillez renseigner au moins le nom et la période.');
       return;
@@ -209,7 +218,6 @@ export default function PromotionsPage() {
       maxUsage: p.maxUsage ?? '',
       code: p.couponCode ?? '',
     });
-    // scroll to top or focus could be added
   };
 
   const handleUpdatePromotion = async (e: React.FormEvent) => {
@@ -280,15 +288,20 @@ export default function PromotionsPage() {
     }
   };
 
-  // --- News / Advertisements ---
+  // --- News / Advertisements (structure de l'image) ---
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loadingNews, setLoadingNews] = useState(true);
 
   const [showNewsForm, setShowNewsForm] = useState(false);
   const [newsForm, setNewsForm] = useState({
+    badge: '',
+    badgeBg: 'bg-red-50',
+    badgeText: 'text-red-500',
+    subtext: '',
     title: '',
-    content: '',
-    imageUrl: '',
+    description: '',
+    buttonText: '',
+    icon: 'arrow-forward-outline',
     link: '',
     type: 'news' as 'news' | 'advertisement',
     isPublished: true,
@@ -307,9 +320,14 @@ export default function PromotionsPage() {
           const data = d.data() as any;
           return {
             id: d.id,
+            badge: data.badge ?? '',
+            badgeBg: data.badgeBg ?? 'bg-gray-100',
+            badgeText: data.badgeText ?? 'text-gray-800',
+            subtext: data.subtext ?? '',
             title: data.title ?? '',
-            content: data.content ?? '',
-            imageUrl: data.imageUrl ?? null,
+            description: data.description ?? '',
+            buttonText: data.buttonText ?? '',
+            icon: data.icon ?? 'arrow-forward-outline',
             link: data.link ?? null,
             type: data.type ?? 'news',
             isPublished: data.isPublished ?? false,
@@ -330,21 +348,42 @@ export default function PromotionsPage() {
 
   const handleNewsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newsForm.title || !newsForm.content) {
-      alert('Titre et contenu requis.');
+
+    if (!newsForm.title || !newsForm.description) {
+      alert('Titre et description requis.');
       return;
     }
 
     try {
       await addDoc(collection(db, 'news'), {
-        ...newsForm,
-        imageUrl: newsForm.imageUrl || null,
+        badge: newsForm.badge,
+        badgeBg: newsForm.badgeBg,
+        badgeText: newsForm.badgeText,
+        subtext: newsForm.subtext,
+        title: newsForm.title,
+        description: newsForm.description,
+        buttonText: newsForm.buttonText,
+        icon: newsForm.icon,
         link: newsForm.link || null,
+        type: newsForm.type,
+        isPublished: newsForm.isPublished,
         createdAt: serverTimestamp(),
       } as any);
 
       setShowNewsForm(false);
-      setNewsForm({ title: '', content: '', imageUrl: '', link: '', type: 'news', isPublished: true });
+      setNewsForm({
+        badge: '',
+        badgeBg: 'bg-red-50',
+        badgeText: 'text-red-500',
+        subtext: '',
+        title: '',
+        description: '',
+        buttonText: '',
+        icon: 'arrow-forward-outline',
+        link: '',
+        type: 'news',
+        isPublished: true,
+      });
     } catch (error) {
       console.error('Erreur création actualité:', error);
       alert("Erreur lors de la création de l'actualité/publicité.");
@@ -354,9 +393,14 @@ export default function PromotionsPage() {
   const startEditNews = (n: NewsItem) => {
     setEditNewsId(n.id);
     setEditNewsData({
+      badge: n.badge,
+      badgeBg: n.badgeBg,
+      badgeText: n.badgeText,
+      subtext: n.subtext,
       title: n.title,
-      content: n.content,
-      imageUrl: n.imageUrl || '',
+      description: n.description,
+      buttonText: n.buttonText,
+      icon: n.icon,
       link: n.link || '',
       type: n.type,
       isPublished: n.isPublished,
@@ -370,7 +414,6 @@ export default function PromotionsPage() {
       const ref = doc(db, 'news', editNewsId);
       await updateDoc(ref, {
         ...editNewsData,
-        imageUrl: editNewsData.imageUrl || null,
         link: editNewsData.link || null,
       } as any);
       setEditNewsId(null);
@@ -387,7 +430,7 @@ export default function PromotionsPage() {
       await deleteDoc(doc(db, 'news', id));
     } catch (error) {
       console.error('Erreur suppression actualité:', error);
-      alert('Impossible de supprimer l\'actualité.');
+      alert("Impossible de supprimer l'actualité.");
     }
   };
 
@@ -617,15 +660,27 @@ export default function PromotionsPage() {
                     </div>
 
                     <form onSubmit={handleNewsSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <input type="text" placeholder="Badge (ex: -20% / Nouveau)" value={newsForm.badge} onChange={(e) => setNewsForm({ ...newsForm, badge: e.target.value })} className="border rounded px-3 py-2" />
+
+                      <input type="text" placeholder="Classe Tailwind badgeBg (ex: bg-red-50)" value={newsForm.badgeBg} onChange={(e) => setNewsForm({ ...newsForm, badgeBg: e.target.value })} className="border rounded px-3 py-2" />
+
+                      <input type="text" placeholder="Classe Tailwind badgeText (ex: text-red-500)" value={newsForm.badgeText} onChange={(e) => setNewsForm({ ...newsForm, badgeText: e.target.value })} className="border rounded px-3 py-2" />
+
+                      <input type="text" placeholder="Sous-texte (ex: Offre limitée)" value={newsForm.subtext} onChange={(e) => setNewsForm({ ...newsForm, subtext: e.target.value })} className="border rounded px-3 py-2" />
+
                       <input type="text" placeholder="Titre" value={newsForm.title} onChange={(e) => setNewsForm({ ...newsForm, title: e.target.value })} className="border rounded px-3 py-2" required />
+
                       <select value={newsForm.type} onChange={(e) => setNewsForm({ ...newsForm, type: e.target.value as any })} className="border rounded px-3 py-2">
                         <option value="news">Actualité</option>
                         <option value="advertisement">Publicité</option>
                       </select>
 
-                      <textarea placeholder="Contenu" value={newsForm.content} onChange={(e) => setNewsForm({ ...newsForm, content: e.target.value })} className="border rounded px-3 py-2 md:col-span-2" required />
+                      <textarea placeholder="Description" value={newsForm.description} onChange={(e) => setNewsForm({ ...newsForm, description: e.target.value })} className="border rounded px-3 py-2 md:col-span-2" required />
 
-                      <input type="url" placeholder="Image URL (optionnel)" value={newsForm.imageUrl} onChange={(e) => setNewsForm({ ...newsForm, imageUrl: e.target.value })} className="border rounded px-3 py-2" />
+                      <input type="text" placeholder="Texte du bouton (ex: En profiter)" value={newsForm.buttonText} onChange={(e) => setNewsForm({ ...newsForm, buttonText: e.target.value })} className="border rounded px-3 py-2" required />
+
+                      <input type="text" placeholder="Icône (ex: arrow-forward-outline)" value={newsForm.icon} onChange={(e) => setNewsForm({ ...newsForm, icon: e.target.value })} className="border rounded px-3 py-2" />
+
                       <input type="url" placeholder="Lien (optionnel)" value={newsForm.link} onChange={(e) => setNewsForm({ ...newsForm, link: e.target.value })} className="border rounded px-3 py-2" />
 
                       <label className="inline-flex items-center space-x-2 md:col-span-2">
@@ -649,15 +704,18 @@ export default function PromotionsPage() {
                     </div>
 
                     <form onSubmit={handleUpdateNews} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <input type="text" placeholder="Badge" value={editNewsData.badge} onChange={(e) => setEditNewsData({ ...editNewsData, badge: e.target.value })} className="border rounded px-3 py-2" />
+                      <input type="text" placeholder="badgeBg" value={editNewsData.badgeBg} onChange={(e) => setEditNewsData({ ...editNewsData, badgeBg: e.target.value })} className="border rounded px-3 py-2" />
+                      <input type="text" placeholder="badgeText" value={editNewsData.badgeText} onChange={(e) => setEditNewsData({ ...editNewsData, badgeText: e.target.value })} className="border rounded px-3 py-2" />
+                      <input type="text" placeholder="Sous-texte" value={editNewsData.subtext} onChange={(e) => setEditNewsData({ ...editNewsData, subtext: e.target.value })} className="border rounded px-3 py-2" />
                       <input type="text" placeholder="Titre" value={editNewsData.title} onChange={(e) => setEditNewsData({ ...editNewsData, title: e.target.value })} className="border rounded px-3 py-2" required />
                       <select value={editNewsData.type} onChange={(e) => setEditNewsData({ ...editNewsData, type: e.target.value })} className="border rounded px-3 py-2">
                         <option value="news">Actualité</option>
                         <option value="advertisement">Publicité</option>
                       </select>
-
-                      <textarea placeholder="Contenu" value={editNewsData.content} onChange={(e) => setEditNewsData({ ...editNewsData, content: e.target.value })} className="border rounded px-3 py-2 md:col-span-2" required />
-
-                      <input type="url" placeholder="Image URL" value={editNewsData.imageUrl} onChange={(e) => setEditNewsData({ ...editNewsData, imageUrl: e.target.value })} className="border rounded px-3 py-2" />
+                      <textarea placeholder="Description" value={editNewsData.description} onChange={(e) => setEditNewsData({ ...editNewsData, description: e.target.value })} className="border rounded px-3 py-2 md:col-span-2" required />
+                      <input type="text" placeholder="Texte du bouton" value={editNewsData.buttonText} onChange={(e) => setEditNewsData({ ...editNewsData, buttonText: e.target.value })} className="border rounded px-3 py-2" required />
+                      <input type="text" placeholder="Icône" value={editNewsData.icon} onChange={(e) => setEditNewsData({ ...editNewsData, icon: e.target.value })} className="border rounded px-3 py-2" />
                       <input type="url" placeholder="Lien" value={editNewsData.link} onChange={(e) => setEditNewsData({ ...editNewsData, link: e.target.value })} className="border rounded px-3 py-2" />
 
                       <label className="inline-flex items-center space-x-2 md:col-span-2">
@@ -682,26 +740,30 @@ export default function PromotionsPage() {
                       <table className="w-full">
                         <thead className="bg-gray-50">
                           <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Badge</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Publié</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                           {news.length === 0 && (
                             <tr>
-                              <td colSpan={5} className="px-6 py-4 whitespace-nowrap text-center text-gray-500">Aucune actualité disponible.</td>
+                              <td colSpan={6} className="px-6 py-4 whitespace-nowrap text-center text-gray-500">Aucune actualité disponible.</td>
                             </tr>
                           )}
 
                           {news.map((n) => (
                             <tr key={n.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <span className={`inline-flex px-2 py-1 rounded ${n.badgeBg} ${n.badgeText}`}>{n.badge || '-'}</span>
+                              </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{n.title}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{n.type === 'news' ? 'Actualité' : 'Publicité'}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{n.createdAt ? formatDateDisplay(n.createdAt?.toDate ? n.createdAt.toDate() : n.createdAt) : '-'}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{n.isPublished ? 'Oui' : 'Non'}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{n.createdAt ? formatDateDisplay(n.createdAt?.toDate ? n.createdAt.toDate() : n.createdAt) : '-'}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div className="flex space-x-2">
                                   <button onClick={() => startEditNews(n)} className="text-blue-600 hover:text-blue-700"><i className="ri-edit-line"></i></button>
@@ -718,7 +780,6 @@ export default function PromotionsPage() {
                 </div>
               </>
             )}
-
           </div>
         </main>
       </div>
