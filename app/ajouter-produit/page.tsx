@@ -126,14 +126,16 @@ export default function AjouterProduitPage() {
     }
   };
 
-  const categories = [
-    { id: 'fruits', name: 'Fruits' },
-    { id: 'legumes', name: 'Légumes' },
-    { id: 'tubercules', name: 'Tubercules' },
-    { id: 'cereales', name: 'Céréales' },
-    { id: 'poissons', name: 'Poissons' },
-    { id: 'viandes', name: 'Viandes' },
-  ];
+ const categories = [
+  { id: 'fruits', name: 'Fruits' },
+  { id: 'legumes', name: 'Légumes' },
+  { id: 'tubercules', name: 'Tubercules' },
+  { id: 'cereales', name: 'Céréales' },
+  { id: 'poissons', name: 'Poissons' },
+  { id: 'viandes', name: 'Viandes' },
+  { id: 'boissons', name: 'Boissons' }, // ✅ Catégorie ajoutée
+];
+
 
   return (
     <div className="flex h-screen bg-gray-50">
