@@ -6,7 +6,9 @@ export interface Product {
   category: string;
   stock: number;
   maxStock: number;
-  stockChange: number;
-  imageUrl: string; // URL complète de l'image dans Firebase Storage
-  status: 'en-stock' | 'stock-faible';
+  stockChange: number;        // Pourcentage d'évolution du stock
+  imageUrl: string;           // URL complète de l'image dans Firebase Storage
+  status: 'en-stock' | 'stock-faible'; // Statut calculé automatiquement
+  lastMonthStock?: number;    // Stock du mois précédent pour calcul du % d'évolution
+  stockMinimum?: number;      // Seuil minimal pour déclencher "stock faible"
 }
