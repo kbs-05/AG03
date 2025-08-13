@@ -1,8 +1,7 @@
 {
   "/commandes/page": "app/commandes/page.js",
   "/produits/page": "app/produits/page.js",
+  "/clients/page": "app/clients/page.js",
   "/page": "app/page.js",
-  "/ajouter-produit/page": "app/ajouter-produit/page.js",
-  "/promotions/page": "app/promotions/page.js",
-  "/clients/page": "app/clients/page.js"
+  "/promotions/page": "app/promotions/page.js"
 }
