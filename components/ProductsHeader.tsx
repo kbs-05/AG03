@@ -39,17 +39,6 @@ export default function ProductsHeader({
 }: ProductsHeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    // On écoute en temps réel les notifications non lues
-    const q = query(collection(db, 'notifications'), where('read', '==', false));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setUnreadCount(snapshot.size);
-    }, (error) => {
-      console.error('Erreur en récupérant notifications :', error);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   return (
     <header className="bg-white shadow-sm border-b px-6 py-4">
@@ -62,22 +51,6 @@ export default function ProductsHeader({
             </button>
           </Link>
         </div>
-
-        <div className="relative">
-          <button
-            className="p-2 text-gray-600 hover:text-gray-900 cursor-pointer"
-            onClick={() => alert('Ouvrir panneau notifications (à implémenter)')}
-            aria-label="Notifications"
-          >
-            <i className="ri-notification-line w-5 h-5 flex items-center justify-center"></i>
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-        </div>
-
       </div>
     </header>
   );
