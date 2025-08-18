@@ -9,6 +9,7 @@ export type Client = {
   phoneNumber: string;
   adresse: string;
   date: string;
+  photoURL:string;
 };
 
 export type Coupon = {

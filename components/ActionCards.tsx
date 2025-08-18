@@ -41,7 +41,7 @@ export default function ActionCards() {
       buttonText: 'Voir Stock',
       buttonColor: 'bg-blue-600',
       icon: 'ri-database-line',
-      onClick: () => router.push('/gerer-stock')
+      onClick: () => router.push('/produits')
     },
     {
       title: 'Promotions',

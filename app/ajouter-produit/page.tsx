@@ -18,16 +18,14 @@ import { uploadImageToStorage } from '@/src/lib/firebase/uploadImageToStorage';
 
 export default function AjouterProduitPage() {
   const [formData, setFormData] = useState({
-    name: '',
+    nom: '',
     category: '',
-    price: '',
+    prix: '',
     stock: '',
-    description: '',
-    supplier: '',
-    unit: 'kg',
-    bio: false,
-    origine: '',
-    dateRecolte: '',
+    quantity: '',
+    unite: 'kg',
+    published: true, // Ajout du champ published
+    description: ''
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -36,13 +34,18 @@ export default function AjouterProduitPage() {
   const [error, setError] = useState<string | null>(null);
 
   const categories = [
-    { id: 'fruits', name: 'Fruits', description: 'Fruits frais et bio', imageUrl: '' },
-    { id: 'legumes', name: 'Légumes', description: 'Légumes de saison', imageUrl: '' },
-    { id: 'confitures', name: 'Confitures', description: 'Confitures artisanales', imageUrl: '' },
-    { id: 'poissons', name: 'Poissons', description: 'Produits de la mer', imageUrl: '' },
-    { id: 'viandes', name: 'Viandes', description: 'Viandes locales', imageUrl: '' },
-    { id: 'boissons', name: 'Boissons', description: 'Boissons naturelles', imageUrl: '' },
+    { id: 'fruits', name: 'Fruits', description: 'Fruits frais et bio' },
+    { id: 'legumes', name: 'Légumes', description: 'Légumes de saison' },
+    { id: 'confitures', name: 'Confitures', description: 'Confitures artisanales' },
+    { id: 'poissons', name: 'Poissons', description: 'Produits de la mer' },
+    { id: 'viandes', name: 'Viandes', description: 'Viandes locales' },
+    { id: 'boissons', name: 'Boissons', description: 'Boissons naturelles' },
   ];
+
+  // Calculs pour la prévisualisation
+  const stockInitial = parseInt(formData.stock, 10) || 0;
+  const stockMinimum = Math.floor(stockInitial * 0.1);
+  const statusPreview = stockInitial <= stockMinimum ? 'stock-faible' : 'en-stock';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,80 +53,83 @@ export default function AjouterProduitPage() {
     setError(null);
 
     try {
-      // Validation
-      const price = parseFloat(formData.price);
+      const prix = parseFloat(formData.prix);
       const stock = parseInt(formData.stock, 10);
+      const quantity = parseInt(formData.quantity, 10);
 
-      if (
-        isNaN(price) || price < 0 ||
-        isNaN(stock) || stock < 0
-      ) {
+      if (isNaN(prix) || prix < 0 || isNaN(stock) || stock < 0 || isNaN(quantity) || quantity < 0) {
         throw new Error('Veuillez remplir correctement les champs numériques.');
       }
 
-      // Upload image si nécessaire
+      if (quantity > stock) {
+        throw new Error('La quantité mise en vente ne peut pas dépasser le stock initial.');
+      }
+
       let imageUrl = '';
       if (imageFile) {
         imageUrl = await uploadImageToStorage(imageFile);
       }
 
-      // Structure produit
+      const categoryId = formData.category;
+      const selectedCategory = categories.find((cat) => cat.id === categoryId);
+      const categoryName = selectedCategory?.name || categoryId;
+
+      // Calculer stockMinimum (10% de maxStock)
+      const maxStock = stock;
+      const stockMinimum = Math.floor(maxStock * 0.1);
+      // Définir status
+      const status = stock <= stockMinimum ? 'stock-faible' : 'en-stock';
+
       const newProduct = {
-        nom: formData.name,
-        description: formData.description,
-        prix: price,
-        unite: formData.unit,
+        nom: formData.nom,
+        prix,
+        category: categoryName,
         stock,
-        bio: formData.bio,
+        maxStock,
+        stockMinimum,
+        description: formData.description,
+        quantity,
+        unite: formData.unite,
         imageUrl,
-        origine: formData.supplier || 'Gabon', // Par défaut "Gabon" si vide
-        dateRecolte: formData.dateRecolte ? serverTimestamp() : null, // Timestamp si date fournie
+        status,
+        published: formData.published, // Ajout du champ published
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
-      const categoryId = formData.category;
       const categoryRef = doc(db, 'categories', categoryId);
       const categorySnap = await getDoc(categoryRef);
 
-      // Si la catégorie n’existe pas → création avec tous les champs
       if (!categorySnap.exists()) {
-        const selectedCategory = categories.find((cat) => cat.id === categoryId);
         await setDoc(categoryRef, {
-          nom: selectedCategory?.name || categoryId,
+          nom: categoryName,
           nombreProduits: 1,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
       } else {
-        // Mise à jour du compteur
         await updateDoc(categoryRef, {
           nombreProduits: increment(1),
           updatedAt: serverTimestamp(),
         });
       }
 
-      // Ajout du produit dans la sous-collection
       await addDoc(collection(categoryRef, 'produits'), newProduct);
 
       alert('✅ Produit ajouté avec succès !');
 
-      // Reset
       setFormData({
-        name: '',
+        nom: '',
         category: '',
-        price: '',
+        prix: '',
         stock: '',
-        description: '',
-        supplier: '',
-        unit: 'kg',
-        bio: false,
-        origine: '',
-        dateRecolte: '',
+        quantity: '',
+        unite: 'kg',
+        published: true,
+        description:''
       });
       setImageFile(null);
       setImagePreview(null);
-
     } catch (err: any) {
       console.error('Erreur ajout produit:', err);
       setError(err.message || 'Une erreur est survenue.');
@@ -167,151 +173,167 @@ export default function AjouterProduitPage() {
         <DashboardHeader />
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Ajouter un nouveau produit
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Ajouter un nouveau produit</h1>
             <p className="text-gray-600 mb-6">
-              Remplissez les informations ci-dessous pour ajouter un produit
+              Remplissez les informations ci-dessous pour ajouter un produit. La quantité mise en vente sera utilisée pour les commandes.
             </p>
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6">
+            <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
               {/* Image */}
-              <div className="mb-6">
+              <div>
                 <label className="block text-sm font-medium mb-2">Image du produit</label>
-                <input type="file" accept="image/*" onChange={handleFileChange} />
+                <input type="file" accept="image/*" onChange={handleFileChange} className="w-full" />
                 {imagePreview && (
-                  <img src={imagePreview} alt="Aperçu produit" className="mt-3 max-h-48" />
+                  <img src={imagePreview} alt="Aperçu produit" className="mt-3 max-h-48 rounded-lg shadow" />
                 )}
               </div>
 
-              {/* Form principal */}
+              {/* Grille principale */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Nom du produit"
-                  className="border p-2 rounded"
-                />
-
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  required
-                  className="border p-2 rounded"
-                >
-                  <option value="">Sélectionner une catégorie</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
-                  placeholder="Prix de vente"
-                  min="0"
-                  step="0.01"
-                  className="border p-2 rounded"
-                />
-
-                <input
-                  type="number"
-                  name="stock"
-                  value={formData.stock}
-                  onChange={handleChange}
-                  required
-                  placeholder="Stock initial"
-                  min="0"
-                  className="border p-2 rounded"
-                />
-
-                <select
-                  name="unit"
-                  value={formData.unit}
-                  onChange={handleChange}
-                  required
-                  className="border p-2 rounded"
-                >
-                  <option value="kg">Kilogramme (kg)</option>
-                  <option value="g">Gramme (g)</option>
-                  <option value="l">Litre (l)</option>
-                  <option value="pièce">Pièce</option>
-                  <option value="sac">Sac</option>
-                </select>
-
-                <input
-                  type="text"
-                  name="supplier"
-                  value={formData.supplier}
-                  onChange={handleChange}
-                  placeholder="Origine (ex: Gabon)"
-                  className="border p-2 rounded"
-                />
-
-                <div className="flex items-center">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Nom du produit</label>
                   <input
-                    type="checkbox"
-                    name="bio"
-                    checked={formData.bio}
+                    type="text"
+                    name="nom"
+                    value={formData.nom}
                     onChange={handleChange}
-                    className="mr-2"
+                    required
+                    placeholder="Nom du produit"
+                    className="border p-3 rounded w-full focus:ring-2 focus:ring-green-400"
                   />
-                  <label className="text-sm font-medium">Produit bio</label>
                 </div>
 
-                <input
-                  type="date"
-                  name="dateRecolte"
-                  value={formData.dateRecolte}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Catégorie</label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    required
+                    className="border p-3 rounded w-full focus:ring-2 focus:ring-green-400"
+                  >
+                    <option value="">Sélectionner une catégorie</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Prix de vente</label>
+                  <input
+                    type="number"
+                    name="prix"
+                    value={formData.prix}
+                    onChange={handleChange}
+                    required
+                    min="0"
+                    step="0.01"
+                    placeholder="Prix"
+                    className="border p-3 rounded w-full focus:ring-2 focus:ring-green-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Stock initial</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    value={formData.stock}
+                    onChange={handleChange}
+                    required
+                    min="0"
+                    placeholder="Stock"
+                    className="border p-3 rounded w-full focus:ring-2 focus:ring-green-400"
+                  />
+                  {stockInitial > 0 && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Stock minimum (10%): {stockMinimum} {formData.unite} | Statut: {statusPreview === 'en-stock' ? 'En stock' : 'Stock faible'}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Quantité mise en vente</label>
+                  <input
+                    type="number"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleChange}
+                    required
+                    min="0"
+                    placeholder="Quantité"
+                    className="border p-3 rounded w-full focus:ring-2 focus:ring-green-400"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Cette quantité sera utilisée pour les commandes.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Unité</label>
+                  <select
+                    name="unite"
+                    value={formData.unite}
+                    onChange={handleChange}
+                    className="border p-3 rounded w-full focus:ring-2 focus:ring-green-400"
+                  >
+                    <option value="kg">Kilogramme (kg)</option>
+                    <option value="g">Gramme (g)</option>
+                    <option value="l">Litre (l)</option>
+                    <option value="pièce">Unité</option>
+                    <option value="sac">Sac</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Publié</label>
+                  <select
+                    name="published"
+                    value={formData.published ? 'true' : 'false'}
+                    onChange={(e) => setFormData({ ...formData, published: e.target.value === 'true' })}
+                    className="border p-3 rounded w-full focus:ring-2 focus:ring-green-400"
+                  >
+                    <option value="true">Oui</option>
+                    <option value="false">Non</option>
+                  </select>
+                </div>
+              </div>
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
                   onChange={handleChange}
-                  placeholder="Date de récolte"
-                  className="border p-2 rounded"
+                  rows={4}
+                  maxLength={500}
+                  placeholder="Description du produit"
+                  className="border p-3 rounded w-full focus:ring-2 focus:ring-green-400"
                 />
               </div>
 
-              {/* Description */}
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={4}
-                maxLength={500}
-                placeholder="Description"
-                className="border p-2 rounded mt-6 w-full"
-              />
-
-              {error && <p className="text-red-600 mt-4">{error}</p>}
+              {error && <p className="text-red-600">{error}</p>}
 
               {/* Boutons */}
-              <div className="mt-6 flex justify-end space-x-4">
+              <div className="flex justify-end space-x-4">
                 <button
                   type="button"
                   onClick={() => {
                     setFormData({
-                      name: '',
+                      nom: '',
                       category: '',
-                      price: '',
+                      prix: '',
                       stock: '',
-                      description: '',
-                      supplier: '',
-                      unit: 'kg',
-                      bio: false,
-                      origine: '',
-                      dateRecolte: '',
+                      quantity: '',
+                      unite: 'kg',
+                      published: true,
+                      description: ''
                     });
                     setImageFile(null);
                     setImagePreview(null);
                   }}
-                  className="border px-6 py-2 rounded"
+                  className="px-6 py-2 rounded border hover:bg-gray-100"
                 >
                   Annuler
                 </button>
@@ -319,7 +341,7 @@ export default function AjouterProduitPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-green-600 text-white px-6 py-2 rounded"
+                  className="px-6 py-2 rounded bg-green-600 text-white hover:bg-green-700"
                 >
                   {loading ? 'Ajout...' : 'Ajouter le produit'}
                 </button>

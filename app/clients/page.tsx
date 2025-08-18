@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Sidebar from '@/components/Sidebar';
 import ClientsHeader from '@/components/ClientsHeader';
 import ClientsTable from '@/components/ClientsTable';
@@ -19,12 +20,12 @@ export default function ClientsPage() {
   const [clientStats, setClientStats] = useState<{ ordersCount: number; favoritesCount: number } | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
-  // States pour formulaire coupon
+  // States coupon
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState<number>(0);
   const [couponActive, setCouponActive] = useState(true);
 
-  // States pour formulaire notification
+  // States notification
   const [notifTitle, setNotifTitle] = useState('');
   const [notifMessage, setNotifMessage] = useState('');
   const [notifMotif, setNotifMotif] = useState('');
@@ -101,30 +102,67 @@ export default function ClientsPage() {
 
                 {/* Panneau détails + actions */}
                 {selectedClient && (
-                  <div className="bg-white shadow rounded-lg p-4 overflow-y-auto max-h-[80vh]">
-                    <h2 className="text-lg font-bold mb-2">{selectedClient.displayName}</h2>
-                    <p>Email : {selectedClient.email}</p>
-                    <p>Téléphone : {selectedClient.phoneNumber}</p>
-                    <p>Adresse : {selectedClient.adresse}</p>
-                    <p>Date de création : {selectedClient.date}</p>
+                  <div className="bg-white shadow rounded-lg p-6 overflow-y-auto max-h-[80vh] flex flex-col items-center">
+                    
+                    {/* Photo centrée */}
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 mb-4 flex items-center justify-center">
+                      {selectedClient.photoURL ? (
+                        <Image
+                          src={selectedClient.photoURL}
+                          alt={selectedClient.displayName ?? 'Client'}
+                          width={96}
+                          height={96}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <i className="ri-user-line text-5xl text-gray-400" aria-hidden="true"></i>
+                      )}
+                    </div>
 
-                    {loadingDetails ? (
-                      <p className="mt-4 text-gray-500">Chargement des statistiques...</p>
-                    ) : (
-                      clientStats && (
-                        <div className="mt-4">
-                          <p className="font-semibold">Statistiques :</p>
-                          <ul className="list-disc ml-5 text-sm text-gray-700">
-                            <li>Commandes : {clientStats.ordersCount}</li>
-                            <li>Favoris : {clientStats.favoritesCount}</li>
-                          </ul>
-                        </div>
-                      )
-                    )}
+                    {/* Nom */}
+                    <h2 className="text-lg font-bold text-gray-900">{selectedClient.displayName}</h2>
+
+                    {/* Infos utilisateur */}
+                    <div className="mt-4 space-y-2 w-full">
+                      <p className="text-sm text-gray-600"><span className="font-medium">Email :</span> {selectedClient.email ?? '—'}</p>
+                      <p className="text-sm text-gray-600"><span className="font-medium">Téléphone :</span> {selectedClient.phoneNumber ?? '—'}</p>
+                      <p className="text-sm text-gray-600"><span className="font-medium">Adresse :</span> {selectedClient.adresse ?? '—'}</p>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Date de création :</span> 
+                        {selectedClient.date
+                          ? new Date(selectedClient.date).toLocaleDateString('fr-FR', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })
+                          : '—'}
+                      </p>
+                    </div>
+
+                    {/* Statistiques */}
+    {loadingDetails ? (
+      <p className="mt-4 text-gray-500">Chargement des statistiques...</p>
+    ) : (
+      clientStats && (
+        <div className="mt-6 w-full">
+          <h3 className="font-semibold text-gray-800 mb-2">Statistiques</h3>
+          <div className="grid grid-cols-2 gap-4 text-center text-sm">
+            <div className="bg-gray-50 p-3 rounded-lg shadow-inner">
+              <p className="text-lg font-bold text-gray-900">{clientStats.ordersCount}</p>
+              <p className="text-gray-500">Commandes</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg shadow-inner">
+              <p className="text-lg font-bold text-gray-900">{clientStats.favoritesCount}</p>
+              <p className="text-gray-500">Favoris</p>
+            </div>
+          </div>
+        </div>
+      )
+    )}
 
                     {/* Formulaire coupon */}
-                    <div className="mt-6 border-t pt-4">
-                      <h3 className="font-semibold mb-2">Assigner un coupon</h3>
+                    <div className="mt-6 border-t pt-4 w-full">
+                      <h3 className="font-semibold mb-3">Assigner un coupon</h3>
                       <input
                         type="text"
                         placeholder="Code du coupon"
@@ -156,8 +194,8 @@ export default function ClientsPage() {
                     </div>
 
                     {/* Formulaire notification */}
-                    <div className="mt-6 border-t pt-4">
-                      <h3 className="font-semibold mb-2">Envoyer une notification</h3>
+                    <div className="mt-6 border-t pt-4 w-full">
+                      <h3 className="font-semibold mb-3">Envoyer une notification</h3>
                       <input
                         type="text"
                         placeholder="Titre"

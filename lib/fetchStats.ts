@@ -1,13 +1,21 @@
 // fetchStats.ts
-import { collection, getCountFromServer, query, getDocs } from "firebase/firestore";
+import { collection, getCountFromServer, query, getDocs, collectionGroup } from "firebase/firestore";
 import { db } from "./firebase";
 
 export async function fetchStats() {
   // Nombre total de commandes
   const commandesCountSnap = await getCountFromServer(query(collection(db, "commandes")));
 
-  // Nombre total de produits
-  const produitsCountSnap = await getCountFromServer(query(collection(db, "produits")));
+  // Nombre total de produits via categories/{categoryId}/produits
+  let produitsCount = 0;
+  try {
+    const produitsQuery = query(collectionGroup(db, "produits"));
+    const produitsCountSnap = await getCountFromServer(produitsQuery);
+    produitsCount = produitsCountSnap.data().count;
+    console.log('Nombre de produits récupérés:', produitsCount);
+  } catch (error) {
+    console.error('Erreur lors du comptage des produits:', error);
+  }
 
   // Nombre total de clients
   const clientsCountSnap = await getCountFromServer(query(collection(db, "clients")));
@@ -23,7 +31,7 @@ export async function fetchStats() {
 
   return {
     commandes: commandesCountSnap.data().count,
-    produits: produitsCountSnap.data().count,
+    categories: produitsCount,
     clients: clientsCountSnap.data().count,
     revenus: totalRevenus
   };

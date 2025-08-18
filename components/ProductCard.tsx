@@ -1,44 +1,40 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Product } from '@/types/product';
+import { db } from '@/lib/firebase';
+import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 
 interface ProductCardProps {
-  product: Product;
+  product: Product & { id?: string; categoryId?: string };
   onEdit: (product: Product) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string, categoryId?: string) => Promise<void>;
 }
 
 export default function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(product.imageUrl ?? null);
 
+  // Synchronise l'image si elle change
   useEffect(() => {
     setImageUrl(product.imageUrl ?? null);
   }, [product.imageUrl]);
 
-  // --- sécurisation des valeurs numériques ---
-  const stockNumber = Number(product.stock ?? 0);
-  const maxStockNumber = Number(product.maxStock ?? 0);
-  const stockChangeNumber = Number(product.stockChange ?? 0);
+  const stockNumber = useMemo(() => Number(product.stock ?? 0), [product.stock]);
+  const maxStockNumber = useMemo(() => Number(product.maxStock ?? 0), [product.maxStock]);
+  const stockMinimumNumber = useMemo(() => Number(product.stockMinimum ?? Math.floor(maxStockNumber * 0.1)), [product.stockMinimum, maxStockNumber]);
+  const quantityNumber = useMemo(() => Number(product.quantity ?? 0), [product.quantity]);
 
-  // si maxStock absent ou invalide, on ne divise pas par 0
-  let stockPercentage = 0;
-  let maxStockDefined = true;
+  // Calculer le statut localement
+  const calculatedStatus = useMemo(() => {
+    return stockNumber <= stockMinimumNumber ? 'stock-faible' : 'en-stock';
+  }, [stockNumber, stockMinimumNumber]);
 
-  if (isNaN(stockNumber)) {
-    console.warn('product.stock n’est pas un nombre:', product);
-  }
-  if (!maxStockNumber || isNaN(maxStockNumber) || maxStockNumber <= 0) {
-    maxStockDefined = false;
-    // si on n'a pas de maxStock, on affiche 100% si on a du stock, ou 0 sinon
-    stockPercentage = stockNumber > 0 ? 100 : 0;
-  } else {
-    stockPercentage = Math.round((stockNumber / maxStockNumber) * 100);
-  }
+  const stockPercentage = useMemo(() => {
+    if (!maxStockNumber || maxStockNumber <= 0) return stockNumber > 0 ? 100 : 0;
+    return Math.max(0, Math.min(100, Math.round((stockNumber / maxStockNumber) * 100)));
+  }, [stockNumber, maxStockNumber]);
 
-  // clamp entre 0 et 100
-  if (!isFinite(stockPercentage)) stockPercentage = 0;
-  stockPercentage = Math.max(0, Math.min(100, stockPercentage));
+  const maxStockDefined = Boolean(maxStockNumber && maxStockNumber > 0);
 
   const getStockColor = () => {
     if (stockPercentage >= 70) return 'bg-green-500';
@@ -46,84 +42,137 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
     return 'bg-red-500';
   };
 
-  const categoryNames: { [key: string]: string } = {
+  // Nom lisible pour la catégorie
+  const categoryNames: Record<string, string> = {
     fruits: 'Fruits',
     legumes: 'Légumes',
     tubercules: 'Tubercules',
     cereales: 'Céréales',
     poissons: 'Poissons',
     viandes: 'Viandes',
+    boissons: 'Boissons',
+    confitures: 'Confitures',
   };
 
   const getCardBackground = () => {
-    if (product.status === 'stock-faible') {
+    if (calculatedStatus === 'stock-faible') {
       return 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200';
     }
     return 'bg-white border-gray-200';
   };
 
+  // Fonction pour gérer la suppression avec mise à jour du nombre de produits
+  const handleDelete = async () => {
+    if (!product.id || !product.categoryId) return;
+
+    try {
+      // Appeler la fonction onDelete pour supprimer le produit
+      await onDelete(product.id, product.categoryId);
+
+      // Mettre à jour le champ nombreProduits dans la catégorie
+      const categoryRef = doc(db, 'categories', product.categoryId);
+      await updateDoc(categoryRef, {
+        nombreProduits: increment(-1),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Erreur lors de la suppression du produit:', error);
+    }
+  };
+
   return (
-    <div className={`rounded-lg border shadow-sm overflow-hidden hover:shadow-md transition-shadow ${getCardBackground()}`}>
+    <div className={`rounded-lg border shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 ${getCardBackground()}`}>
+      {/* Image */}
       <div className="relative">
         {imageUrl ? (
-          <img src={imageUrl} alt={product.name} className="w-full h-48 object-cover object-top" />
+          <img
+            src={imageUrl}
+            alt={product.nom ?? 'Produit'}
+            className="w-full h-64 object-cover object-top"
+          />
         ) : (
-          <div className="w-full h-48 flex items-center justify-center bg-gray-100 text-gray-400">
-            Chargement de l’image...
+          <div className="w-full h-64 flex items-center justify-center bg-gray-100 text-gray-400 text-base font-medium">
+            Pas d’image disponible
           </div>
         )}
 
-        <div className="absolute top-2 right-2">
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${product.status === 'en-stock' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>
-            {product.status === 'en-stock' ? 'En stock' : 'Stock faible'}
+        {/* Statut */}
+        <div className="absolute top-3 right-3">
+          <span
+            className={`px-3 py-1 text-sm font-semibold rounded-full ${
+              calculatedStatus === 'en-stock' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+            }`}
+          >
+            {calculatedStatus === 'en-stock' ? 'En stock' : 'Stock faible'}
           </span>
         </div>
       </div>
 
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-gray-900 text-lg">{product.name}</h3>
-          <span className="text-green-600 font-bold text-lg">{Number(product.price ?? 0).toLocaleString()} XAF</span>
+      {/* Contenu */}
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-extrabold text-green-custom text-xl">{product.nom ?? 'Nom non défini'}</h3>
+          <span className="text-green-custom font-extrabold text-xl">
+            {(Number(product.prix ?? 0)).toLocaleString()} XAF
+          </span>
         </div>
 
-        <p className="text-sm text-gray-600 mb-3">{categoryNames[product.category] ?? product.category}</p>
+        <p className="text-base font-extrabold text-green-custom mb-4">
+          {categoryNames[product.category ?? ''] ?? product.category ?? 'Catégorie non définie'}
+        </p>
 
-        <div className="space-y-3">
+        {/* Stock */}
+        <div className="space-y-4">
           <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-600">Stock: {isNaN(stockNumber) ? '—' : stockNumber} unités</span>
-            <span className={`font-medium ${stockChangeNumber >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {stockChangeNumber >= 0 ? '+' : ''}
-              {stockChangeNumber}% ce mois
+            <span className="text-gray-600">
+              Stock: {isNaN(stockNumber) ? '—' : stockNumber} {product.unite ?? 'unités'}
+            </span>
+            <span className="text-gray-600">
+              Quantité en vente: {isNaN(quantityNumber) ? '—' : quantityNumber} {product.unite ?? 'unités'}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-600">
+              Stock minimum: {isNaN(stockMinimumNumber) ? '—' : stockMinimumNumber} {product.unite ?? 'unités'}
+            </span>
+            <span className="text-gray-600">
+              Rabais: {product.discount ?? 'Aucun rabais'}%
             </span>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-2" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={stockPercentage}>
-            <div
-              className={`h-2 rounded-full ${getStockColor()}`}
-              style={{ width: `${stockPercentage}%` }}
-            />
+          <div
+            className="w-full bg-gray-200 rounded-full h-3"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={stockPercentage}
+          >
+            <div className={`h-3 rounded-full ${getStockColor()}`} style={{ width: `${stockPercentage}%` }} />
           </div>
 
-          <div className="flex justify-between items-center pt-2 text-xs text-gray-500">
-            <div>
-              {maxStockDefined ? `Max: ${maxStockNumber}` : <span className="italic">maxStock non défini</span>}
-            </div>
-            <div>{maxStockDefined ? `${stockPercentage}%` : (stockNumber > 0 ? 'Disponible' : 'Rupture')}</div>
+          <div className="flex justify-between items-center pt-3 text-sm text-gray-500">
+            <div>{maxStockDefined ? `Max: ${maxStockNumber}` : <span className="italic">maxStock non défini</span>}</div>
+            <div>{maxStockDefined ? `${stockPercentage}%` : stockNumber > 0 ? 'Disponible' : 'Rupture'}</div>
           </div>
 
-          <div className="flex justify-between items-center pt-2">
-            <div className="flex space-x-2">
-              <button onClick={() => onEdit(product)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" aria-label="Editer le produit">
-                <i className="ri-edit-line w-4 h-4 flex items-center justify-center" />
+          {/* Actions */}
+          <div className="flex justify-between items-center pt-4">
+            <div className="flex space-x-3">
+              <button
+                onClick={() => product.id && onEdit(product)}
+                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                aria-label="Éditer le produit"
+              >
+                <i className="ri-edit-line w-5 h-5 flex items-center justify-center" />
               </button>
-              <button onClick={() => onDelete(product.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" aria-label="Supprimer le produit">
-                <i className="ri-delete-bin-line w-4 h-4 flex items-center justify-center" />
+              <button
+                onClick={handleDelete}
+                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                aria-label="Supprimer le produit"
+              >
+                <i className="ri-delete-bin-line w-5 h-5 flex items-center justify-center" />
               </button>
             </div>
-            <button className="flex items-center space-x-1 px-3 py-1 text-green-600 hover:bg-green-50 rounded-lg transition-colors text-sm">
-              <i className="ri-eye-line w-4 h-4 flex items-center justify-center" />
-              <span>Détails</span>
-            </button>
           </div>
         </div>
       </div>

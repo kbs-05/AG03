@@ -59,7 +59,7 @@ export default function StatsCards() {
           },
           {
             title: 'Produits',
-            value: data.produits.toString(),
+            value: data.categories.toString(),
           },
           {
             title: 'Clients',
