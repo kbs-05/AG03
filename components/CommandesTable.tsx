@@ -11,12 +11,19 @@ export interface Commande {
     displayName: string;
     phoneNumber: string;
   };
-  items: any[];
+  items: {
+    id: string;
+    nom: string;
+    imageUrl: string;
+    cartQuantity: number;
+    prix: number;
+    totalPrice: number;
+  }[];
 }
 
 interface CommandesTableProps {
   commandes: Commande[];
-  onSelectCommande: (commande: Commande) => void;
+  onSelectCommande?: (commande: Commande) => void; // facultatif si tu veux gérer le modal ici
 }
 
 interface StatusBadgeProps {
@@ -38,9 +45,10 @@ function StatusBadge({ status }: StatusBadgeProps) {
   );
 }
 
-export default function CommandesTable({ commandes, onSelectCommande }: CommandesTableProps) {
+export default function CommandesTable({ commandes }: CommandesTableProps) {
   const [sortField, setSortField] = useState<keyof Commande>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [selectedCommande, setSelectedCommande] = useState<Commande | null>(null);
 
   const handleSort = (field: keyof Commande) => {
     if (sortField === field) {
@@ -109,7 +117,7 @@ export default function CommandesTable({ commandes, onSelectCommande }: Commande
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <button
-                    onClick={() => onSelectCommande(commande)}
+                    onClick={() => setSelectedCommande(commande)}
                     className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-blue-600"
                   >
                     <i className="ri-eye-line w-4 h-4"></i>
@@ -125,6 +133,58 @@ export default function CommandesTable({ commandes, onSelectCommande }: Commande
         <div className="text-center py-12">
           <i className="ri-file-list-3-line w-12 h-12 mx-auto text-gray-400 mb-4"></i>
           <p className="text-gray-500">Aucune commande trouvée</p>
+        </div>
+      )}
+
+      {/* Modal Détails */}
+      {selectedCommande && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 p-6 relative max-h-[90vh] overflow-auto">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
+              onClick={() => setSelectedCommande(null)}
+            >
+              &times;
+            </button>
+
+            <h3 className="text-xl font-semibold mb-4">
+              Détails commande #{selectedCommande.id}
+            </h3>
+
+            <div className="mb-4">
+              <p><strong>Client :</strong> {selectedCommande.user.displayName}</p>
+              <p><strong>Téléphone :</strong> {selectedCommande.user.phoneNumber}</p>
+              <p><strong>Status :</strong> {selectedCommande.status}</p>
+              <p><strong>Total :</strong> {selectedCommande.commandetotal} FCFA</p>
+              <p><strong>Date :</strong> {new Date(selectedCommande.date.seconds * 1000).toLocaleString()}</p>
+            </div>
+
+            <h4 className="font-semibold mb-2">Articles :</h4>
+            <table className="w-full text-sm border-t border-b border-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left">Image</th>
+                  <th className="px-4 py-2 text-left">Produit</th>
+                  <th className="px-4 py-2 text-left">Quantité</th>
+                  <th className="px-4 py-2 text-left">Prix unitaire</th>
+                  <th className="px-4 py-2 text-left">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {selectedCommande.items.map((item) => (
+                  <tr key={item.id}>
+                    <td className="px-4 py-2">
+                      <img src={item.imageUrl} alt={item.nom} className="w-12 h-12 object-cover rounded"/>
+                    </td>
+                    <td className="px-4 py-2">{item.nom}</td>
+                    <td className="px-4 py-2">{item.cartQuantity}</td>
+                    <td className="px-4 py-2">{item.prix} FCFA</td>
+                    <td className="px-4 py-2">{item.totalPrice} FCFA</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
