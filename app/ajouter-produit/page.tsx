@@ -24,12 +24,13 @@ export default function AjouterProduitPage() {
     stock: '',
     quantity: '',
     unite: 'kg',
-    published: true, // Ajout du champ published
+    published: true,
     description: ''
   });
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,10 +43,46 @@ export default function AjouterProduitPage() {
     { id: 'boissons', name: 'Boissons', description: 'Boissons naturelles' },
   ];
 
-  // Calculs pour la prévisualisation
   const stockInitial = parseInt(formData.stock, 10) || 0;
   const stockMinimum = Math.floor(stockInitial * 0.1);
   const statusPreview = stockInitial <= stockMinimum ? 'stock-faible' : 'en-stock';
+
+  // Gestion images principales (jusqu'à 5)
+  const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files).slice(0, 5); // max 5 fichiers
+      const previews: string[] = [];
+
+      filesArray.forEach((file) => {
+        if (file.size > 5 * 1024 * 1024) {
+          setError('Chaque image ne doit pas dépasser 5 Mo.');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          previews.push(reader.result as string);
+          if (previews.length === filesArray.length) {
+            setImagePreviews(previews);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      setImageFiles(filesArray);
+      setError(null);
+    }
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,19 +102,23 @@ export default function AjouterProduitPage() {
         throw new Error('La quantité mise en vente ne peut pas dépasser le stock initial.');
       }
 
-      let imageUrl = '';
-      if (imageFile) {
-        imageUrl = await uploadImageToStorage(imageFile);
+      // Upload images
+      const uploadedUrls: string[] = [];
+      for (const file of imageFiles) {
+        const url = await uploadImageToStorage(file);
+        uploadedUrls.push(url);
       }
+
+      // Première image comme image principale
+      const mainImageUrl = uploadedUrls[0] || '';
+      const galleryImages = uploadedUrls.slice(1);
 
       const categoryId = formData.category;
       const selectedCategory = categories.find((cat) => cat.id === categoryId);
       const categoryName = selectedCategory?.name || categoryId;
 
-      // Calculer stockMinimum (10% de maxStock)
       const maxStock = stock;
       const stockMinimum = Math.floor(maxStock * 0.1);
-      // Définir status
       const status = stock <= stockMinimum ? 'stock-faible' : 'en-stock';
 
       const newProduct = {
@@ -90,9 +131,10 @@ export default function AjouterProduitPage() {
         description: formData.description,
         quantity,
         unite: formData.unite,
-        imageUrl,
+        imageUrl: mainImageUrl,   // image principale
+        images: galleryImages,    // autres images pour la galerie
         status,
-        published: formData.published, // Ajout du champ published
+        published: formData.published,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -118,6 +160,7 @@ export default function AjouterProduitPage() {
 
       alert('✅ Produit ajouté avec succès !');
 
+      // Reset form
       setFormData({
         nom: '',
         category: '',
@@ -126,43 +169,15 @@ export default function AjouterProduitPage() {
         quantity: '',
         unite: 'kg',
         published: true,
-        description:''
+        description: ''
       });
-      setImageFile(null);
-      setImagePreview(null);
+      setImageFiles([]);
+      setImagePreviews([]);
     } catch (err: any) {
       console.error('Erreur ajout produit:', err);
       setError(err.message || 'Une erreur est survenue.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
-    });
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 5 * 1024 * 1024) {
-        setError('La taille de l’image ne doit pas dépasser 5 Mo.');
-        setImageFile(null);
-        setImagePreview(null);
-        return;
-      }
-      setImageFile(file);
-      setError(null);
-
-      const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
     }
   };
 
@@ -179,13 +194,26 @@ export default function AjouterProduitPage() {
             </p>
 
             <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
-              {/* Image */}
+              {/* Images principales */}
               <div>
-                <label className="block text-sm font-medium mb-2">Image du produit</label>
-                <input type="file" accept="image/*" onChange={handleFileChange} className="w-full" />
-                {imagePreview && (
-                  <img src={imagePreview} alt="Aperçu produit" className="mt-3 max-h-48 rounded-lg shadow" />
-                )}
+                <label className="block text-sm font-medium mb-2">Images du produit (max 5)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFilesChange}
+                  className="w-full"
+                />
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {imagePreviews.map((src, index) => (
+                    <img
+                      key={index}
+                      src={src}
+                      alt={`Aperçu ${index + 1}`}
+                      className="h-24 w-24 object-cover rounded shadow"
+                    />
+                  ))}
+                </div>
               </div>
 
               {/* Grille principale */}
@@ -299,7 +327,7 @@ export default function AjouterProduitPage() {
                   </select>
                 </div>
               </div>
-              {/* Description */}
+
               <div>
                 <label className="block text-sm font-medium mb-1">Description</label>
                 <textarea
@@ -315,7 +343,6 @@ export default function AjouterProduitPage() {
 
               {error && <p className="text-red-600">{error}</p>}
 
-              {/* Boutons */}
               <div className="flex justify-end space-x-4">
                 <button
                   type="button"
@@ -330,8 +357,8 @@ export default function AjouterProduitPage() {
                       published: true,
                       description: ''
                     });
-                    setImageFile(null);
-                    setImagePreview(null);
+                    setImageFiles([]);
+                    setImagePreviews([]);
                   }}
                   className="px-6 py-2 rounded border hover:bg-gray-100"
                 >

@@ -28,7 +28,8 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="w-64 bg-white shadow-lg h-full">
+    <div className="w-64 bg-white shadow-lg h-screen flex flex-col">
+      {/* Logo */}
       <div className="p-6">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
@@ -38,6 +39,7 @@ export default function Sidebar() {
         </div>
       </div>
 
+      {/* Profil Admin */}
       <div className="p-6 border-b">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -50,7 +52,8 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="mt-6">
+      {/* Menu */}
+      <nav className="mt-6 flex-1">
         {menuItems.map((item) => (
           <Link
             key={item.id}

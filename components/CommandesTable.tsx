@@ -2,49 +2,43 @@
 
 import { useState } from 'react';
 
-// Types
-interface Commande {
+export interface Commande {
   id: string;
-  client: string;
-  ville: string;
-  produits: number;
-  montant: string;
-  date: string;
-  statut: 'En cours' | 'Expédiée' | 'Livrée';
+  commandetotal: number;
+  date: any; // Timestamp Firestore
+  status: 'En attente' | 'En cours' | 'Expédiée' | 'Livrée';
+  user: {
+    displayName: string;
+    phoneNumber: string;
+  };
+  items: any[];
 }
 
 interface CommandesTableProps {
   commandes: Commande[];
+  onSelectCommande: (commande: Commande) => void;
 }
 
 interface StatusBadgeProps {
-  status: 'En cours' | 'Expédiée' | 'Livrée';
+  status: 'En attente' | 'En cours' | 'Expédiée' | 'Livrée';
 }
 
-// Badge pour statut
 function StatusBadge({ status }: StatusBadgeProps) {
   const styles = {
+    'En attente': 'bg-yellow-100 text-yellow-800',
     'En cours': 'bg-orange-100 text-orange-800',
     'Expédiée': 'bg-blue-100 text-blue-800',
     'Livrée': 'bg-green-100 text-green-800',
   };
 
-  const icons = {
-    'En cours': 'ri-time-line',
-    'Expédiée': 'ri-truck-line',
-    'Livrée': 'ri-check-line',
-  };
-
   return (
     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
-      <i className={`${icons[status]} w-3 h-3 flex items-center justify-center mr-1`}></i>
       {status}
     </span>
   );
 }
 
-// Tableau principal
-export default function CommandesTable({ commandes }: CommandesTableProps) {
+export default function CommandesTable({ commandes, onSelectCommande }: CommandesTableProps) {
   const [sortField, setSortField] = useState<keyof Commande>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -61,14 +55,14 @@ export default function CommandesTable({ commandes }: CommandesTableProps) {
     let aValue: any = a[sortField];
     let bValue: any = b[sortField];
 
-    if (sortField === 'montant') {
-      aValue = parseInt(a.montant.replace(/[^0-9]/g, ''));
-      bValue = parseInt(b.montant.replace(/[^0-9]/g, ''));
+    if (sortField === 'commandetotal') {
+      aValue = Number(a.commandetotal);
+      bValue = Number(b.commandetotal);
     }
 
     if (sortField === 'date') {
-      aValue = new Date(a.date.split('/').reverse().join('-')).getTime();
-      bValue = new Date(b.date.split('/').reverse().join('-')).getTime();
+      aValue = new Date(a.date.seconds * 1000);
+      bValue = new Date(b.date.seconds * 1000);
     }
 
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
@@ -76,28 +70,27 @@ export default function CommandesTable({ commandes }: CommandesTableProps) {
     return 0;
   });
 
-  const handleActionClick = (action: string, commandeId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log(`Action ${action} sur commande:`, commandeId);
-  };
-
   return (
     <div className="bg-white rounded-lg shadow-sm">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Toutes les commandes</h3>
-          <span className="text-sm text-gray-500">{commandes.length} commandes au total</span>
-        </div>
+      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900">Toutes les commandes</h3>
+        <span className="text-sm text-gray-500">{commandes.length} commandes au total</span>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">N° COMMANDE</th>
+              <th onClick={() => handleSort('id')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer">
+                N° COMMANDE
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CLIENT</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DATE</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">MONTANT</th>
+              <th onClick={() => handleSort('date')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer">
+                DATE
+              </th>
+              <th onClick={() => handleSort('commandetotal')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer">
+                MONTANT
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">STATUT</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ACTIONS</th>
             </tr>
@@ -106,38 +99,21 @@ export default function CommandesTable({ commandes }: CommandesTableProps) {
             {sortedCommandes.map((commande) => (
               <tr key={commande.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">{commande.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{commande.client}</div>
-                    <div className="text-sm text-gray-500">{commande.ville}</div>
-                  </div>
+                <td className="px-6 py-4 whitespace-nowrap">{commande.user.displayName}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  {new Date(commande.date.seconds * 1000).toLocaleString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{commande.date}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{commande.montant}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{commande.commandetotal}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <StatusBadge status={commande.statut} />
+                  <StatusBadge status={commande.status} />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={(e) => handleActionClick('voir', commande.id, e)}
-                      className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-blue-600"
-                    >
-                      <i className="ri-eye-line w-4 h-4"></i>
-                    </button>
-                    <button
-                      onClick={(e) => handleActionClick('modifier', commande.id, e)}
-                      className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-green-600"
-                    >
-                      <i className="ri-edit-line w-4 h-4"></i>
-                    </button>
-                    <button
-                      onClick={(e) => handleActionClick('supprimer', commande.id, e)}
-                      className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600"
-                    >
-                      <i className="ri-delete-bin-line w-4 h-4"></i>
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => onSelectCommande(commande)}
+                    className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-blue-600"
+                  >
+                    <i className="ri-eye-line w-4 h-4"></i>
+                  </button>
                 </td>
               </tr>
             ))}
