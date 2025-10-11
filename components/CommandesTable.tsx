@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/src/firebase';
 
+// ----- Types -----
 export interface Commande {
   id: string;
   commandetotal: number;
@@ -23,10 +24,16 @@ export interface Commande {
   }[];
 }
 
+// Props pour le composant CommandesTable
+interface CommandesTableProps {
+  commandes: Commande[];
+  onSelectCommande: (commande: Commande) => void;
+}
+
+// ----- Composant Badge de statut -----
 interface StatusBadgeProps {
   status: 'En attente' | 'En cours' | 'Expédiée' | 'Livrée';
 }
-
 function StatusBadge({ status }: StatusBadgeProps) {
   const styles = {
     'En attente': 'bg-yellow-100 text-yellow-800',
@@ -41,8 +48,8 @@ function StatusBadge({ status }: StatusBadgeProps) {
   );
 }
 
-export default function CommandesTable() {
-  const [commandes, setCommandes] = useState<Commande[]>([]);
+// ----- Composant principal -----
+export default function CommandesTable({ commandes, onSelectCommande }: CommandesTableProps) {
   const [sortField, setSortField] = useState<keyof Commande>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [selectedCommande, setSelectedCommande] = useState<Commande | null>(null);
@@ -51,19 +58,6 @@ export default function CommandesTable() {
   const [periode, setPeriode] = useState<'jour' | 'mois' | 'annee'>('jour');
   const [filtreDetail, setFiltreDetail] = useState<string | null>(null);
   const [openedGroups, setOpenedGroups] = useState<Set<string>>(new Set());
-
-  // ----- Firestore realtime -----
-  useEffect(() => {
-    const q = query(collection(db, 'commandes'), orderBy('date', 'desc'));
-    const unsubscribe = onSnapshot(q, snapshot => {
-      const cmds: Commande[] = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      } as Commande));
-      setCommandes(cmds);
-    });
-    return () => unsubscribe();
-  }, []);
 
   // ----- Tri -----
   const handleSort = (field: keyof Commande) => {
@@ -156,6 +150,7 @@ export default function CommandesTable() {
         <h3 className="text-lg font-semibold text-gray-900">Toutes les commandes</h3>
         <span className="text-sm text-gray-500">{commandes.length} commandes au total</span>
       </div>
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50">
@@ -177,7 +172,7 @@ export default function CommandesTable() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{commande.commandetotal.toLocaleString()} FCFA</td>
                 <td className="px-6 py-4 whitespace-nowrap"><StatusBadge status={commande.status} /></td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <button onClick={() => setSelectedCommande(commande)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-blue-600">Voir</button>
+                  <button onClick={() => onSelectCommande(commande)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-blue-600">Voir</button>
                 </td>
               </tr>
             ))}
