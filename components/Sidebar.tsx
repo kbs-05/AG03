@@ -17,6 +17,8 @@ export default function Sidebar() {
       setActiveItem('clients');
     } else if (pathname.startsWith('/commandes')) {
       setActiveItem('commandes');
+    } else if (pathname.startsWith('/livreurs')) {
+      setActiveItem('livreurs');
     }
   }, [pathname]);
 
@@ -25,6 +27,7 @@ export default function Sidebar() {
     { id: 'produits', label: 'Produits', icon: 'ri-product-hunt-line', href: '/produits' },
     { id: 'clients', label: 'Clients', icon: 'ri-team-line', href: '/clients' },
     { id: 'commandes', label: 'Commandes', icon: 'ri-shopping-cart-line', href: '/commandes' },
+    { id: 'livreurs', label: 'Livreurs', icon: 'ri-truck-line', href: '/livreurs' }, // ✅ Nouveau
   ];
 
   return (
@@ -33,7 +36,7 @@ export default function Sidebar() {
       <div className="p-6">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-            <i className="ri-plant-line text-white"></i>
+            <i className="ri-plant-line text-white text-lg"></i>
           </div>
           <span className="text-xl font-bold text-gray-900">Agri-Gabon</span>
         </div>
@@ -43,7 +46,7 @@ export default function Sidebar() {
       <div className="p-6 border-b">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-            <i className="ri-user-line text-green-600"></i>
+            <i className="ri-user-line text-green-600 text-lg"></i>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-900">Admin</p>
@@ -70,6 +73,11 @@ export default function Sidebar() {
           </Link>
         ))}
       </nav>
+
+      {/* Bas de sidebar */}
+      <div className="p-4 border-t text-center text-xs text-gray-500">
+        <p>© 2025 Agri-Gabon</p>
+      </div>
     </div>
   );
 }
