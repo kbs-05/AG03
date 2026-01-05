@@ -76,7 +76,7 @@ export default function ProductsHeader({
   }, [searchTerm]);
 
   return (
-    <header className="bg-white shadow-sm border-b px-6 py-4 relative">
+    <header className="bg-white rounded-lg shadow-sm border-b px-6 py-4 relative">
       <div className="flex items-center justify-between flex-wrap gap-4">
         {/* Barre de recherche */}
         <div className="flex-1 max-w-md relative">
