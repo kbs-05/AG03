@@ -108,7 +108,7 @@ export default function StatsCards() {
           },
           {
             title: 'Produits',
-            value: data.categories.toLocaleString(),
+            value: data.produits.toLocaleString(),
             icon: <Package className="w-5 h-5" />,
             isLoading: false,
           },
